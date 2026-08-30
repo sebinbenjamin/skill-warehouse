@@ -4,7 +4,7 @@ description: Decide whether a repository may be disclosed to an AI provider that
 disable-model-invocation: true
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   repo-disclosure.audience: developers
   repo-disclosure.purpose: ai-data-safety
 ---
@@ -24,11 +24,46 @@ Establish before deciding:
 - the provider being assessed, and whether submitted data may be retained, reused, or used for training
 - the intended use: static repository access, agentic/tool execution, or both
 - the scope: repository, worktree, or directory
-- the assessing agent: run the assessment with a provider already approved for the repository; the provider under evaluation must never be the one reading the files
+- the assessing agent: run the assessment with a provider already approved for the repository; the provider under evaluation must never be the one reading the files; this binds every model that reads a file during the run, including any worker chosen under Scale and delegation
 
 Terms differ across tiers and endpoints of the same provider (consumer vs API vs enterprise, free vs paid, opt-out settings, zero-data-retention agreements); assess the exact tier and account in use, not the provider's headline policy. Unknown terms are assessed as retention-and-training, with that assumption stated.
 
 Done when target, access mode, scope, and the separation of assessing agent from assessed provider are each known or explicitly assumed.
+
+## Scale and delegation
+
+Steps 2 to 5 read the repository. That fills the assessing session's context and costs money, so size the job and agree the plan with the user before you read the first file. The exchange runs on every assessment; a small repo just gets a short version of it.
+
+### Size the job
+
+Run the sizing commands in `references/subagent-briefs.md`: tracked file count, worktree bytes excluding `.git` and dependency caches, commit count, ten largest directories. Estimate tokens as text bytes divided by four. The history pass grows with commit count and diff size, so estimate that one from `git log -p` bytes, and cap or sample it above 200k tokens. Show the user the counts, the estimate per pass, and this statement: workers return citations (kind, location, class), never values, so no secret and no personal record enters the report or this session.
+
+Done when the user has seen the sizing figures and the estimate before any repository file is read.
+
+### Choose models
+
+Every model that reads a file is an assessing agent and must belong to the approved provider named in Assessment target. Show the table, ask one question, and accept the defaults when the user answers with nothing. Refuse a choice that names the provider under assessment and restate the default.
+
+| Role | Default | Override when |
+| :-- | :-- | :-- |
+| Reading and scanning workers (passes 2 to 5) | The approved provider's cheapest current fast model at low effort. Anthropic: `claude-haiku-4-5` (Claude Code Agent tool: `model: "haiku"`). OpenAI: `gpt-5.6-luna`. Google: the session's default model. | Dense domain language a small model misclassifies, as in legal, medical, finance, or security research. Raise to the mid tier, `claude-sonnet-5` / `model: "sonnet"`. |
+| Verdict and report (steps 1, 6, 7, 8) | The session's main model. Anthropic: `claude-opus-5`. OpenAI: `gpt-5.6`. Google: the session's default model. | Keep it. The verdict is one serious finding, not a score; a missed finding is the whole failure. |
+
+Model ids move faster than this skill. The names above are examples of each tier, current at this version; when one is unavailable, name the provider's current equivalent tier rather than substituting another provider.
+
+Done when both roles have a named model from the approved provider, or the user has accepted the defaults.
+
+### Dispatch or run inline
+
+Delegation saves this session's context. It does not narrow reach. A subagent inherits the parent's sandbox and permissions and reads exactly what this session can read, so treat it as a cost control; step 7 still decides boundaries.
+
+Claude Code and OpenCode have in-session subagents with per-call model selection; every other harness runs the inline fallback on the session's own model. `references/subagent-briefs.md` carries the dispatch shape and model syntax for each, the fallback recipe, and the briefs themselves.
+
+Where subagents exist, dispatch one worker per pass, pasting the brief for that pass, the findings schema, and the data classes into its prompt, since a worker cannot load this skill. Each worker returns citations and nothing else. Hold the lists in this session.
+
+Without subagents, run the inline fallback. Scanners and listings come first and narrow the reading, then sample what is left, largest directories first. Say in the report which paths you read and which you sampled, and lower Confidence accordingly.
+
+Done when each of passes 2 to 5 is assigned to a worker or to the inline fallback, and the user has confirmed the plan.
 
 ## Data classes
 
@@ -77,13 +112,13 @@ Done when ownership and disclosure authority are each established or explicitly 
 
 ### 2. Inventory reach
 
-Walk the repository and list every surface in the Reach section above for the requested access mode.
+Walk the repository and list every surface in the Reach section above for the requested access mode. Delegate this pass per Scale and delegation with the inventory brief; the returned list is the inventory.
 
 Done when every practical route by which the provider could receive project information is listed.
 
 ### 3. Check restricted data
 
-Hunt the inventory for RESTRICTED material. Distinguish genuine secrets from placeholders, and real records from synthetic fixtures.
+Hunt the inventory for RESTRICTED material. Distinguish genuine secrets from placeholders, and real records from synthetic fixtures. Delegate with the restricted-data brief; confirm or reject each returned finding here, since the worker reports confidence, not a decision.
 
 Done when every suspected restricted finding is confirmed, false positive, or unresolved. Unresolved suspected restricted material in reach counts as confirmed.
 
@@ -93,11 +128,13 @@ Read ordinary-looking source and documentation for CONFIDENTIAL information a pa
 
 > Would the owner reasonably object if this exact material were submitted to a provider allowed to retain or train on it?
 
+Delegate with the confidentiality brief; apply the question above to each returned item yourself.
+
 Done when every item in the inventory has a data class and a disclosure decision.
 
 ### 5. Review Git history
 
-When history is in reach, check for deleted secrets, removed production values, old client data, internal documents, and sensitive commit messages.
+When history is in reach, check for deleted secrets, removed production values, old client data, internal documents, and sensitive commit messages. Delegate with the history brief, bounded to the commit range agreed in sizing.
 
 Done when the report states whether history was in scope and whether it changes the verdict.
 
@@ -136,6 +173,7 @@ Done when the overall, static, and agentic verdicts are consistent with the find
 **Agentic/tool execution:** <verdict>
 **Assessed for:** <provider, or the conservative training-eligible assumption>
 **Assessed scope:** <repo/worktree/directory and access mode>
+**Read by:** <worker model(s) and verdict model, or "inline, single model">
 **Confidence:** High | Medium | Low
 
 ## Why
@@ -159,6 +197,8 @@ Done when the overall, static, and agentic verdicts are consistent with the find
 ## Recommendation
 <one direct operational recommendation>
 ```
+
+Worker citations carry class and location (schema in `references/subagent-briefs.md`); carry both through and add why it matters and the required action here.
 
 Recommendation examples:
 

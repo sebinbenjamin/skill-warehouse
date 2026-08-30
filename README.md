@@ -13,6 +13,8 @@ Two questions, in order. May this code reach this provider at all? And once it d
 
 Both are user-invoked. They cost nothing in context, and Claude Code blocks the model from firing them itself. Type `/repo-disclosure` or `/agent-permissions`. [Five of the eight harnesses that can load them ignore that setting.](#other-harnesses)
 
+A run is not free. Before it scans, `repo-disclosure` sizes the repository, states a token estimate, and asks which approved models should read and which should decide. Where the harness has subagents, the reading goes to them and only the findings come back.
+
 `agent-permissions` reads the config of the harness you actually run (Claude Code, Codex CLI, OpenCode, Gemini CLI, Cursor, GitHub Copilot, Aider, Cline, Roo Code, Amp, or Kiro) and loads a per-harness reference only for the ones it finds.
 
 ## Install
@@ -61,7 +63,8 @@ The other failure is inert config: a key placed in a scope the harness ignores, 
 ## Layout
 
 ```
-repo-disclosure/SKILL.md          the disclosure decision, self-contained
+repo-disclosure/SKILL.md          the disclosure decision
+repo-disclosure/references/       sizing commands and the briefs pasted into worker subagents
 agent-permissions/SKILL.md        the hardening decision
 agent-permissions/references/     shared vocabulary, graded checklist, scan commands,
                                   and one hardening reference per harness

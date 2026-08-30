@@ -14,5 +14,6 @@ Claude Code and Cursor enforce that field. OpenCode, Copilot CLI, Gemini CLI, Am
 
 - `agent-permissions/references/*.md` are loaded on demand, one per detected harness. Editing one changes what the skill does.
 - Config blocks in the references get pasted into people's real security settings. Confirm JSON and TOML still parse before committing a change to one.
+- `repo-disclosure/references/subagent-briefs.md` holds prompts pasted verbatim into worker subagents, which cannot load the skill. A brief has to stand alone, so it carries copies of the data classes and the reach list; change either one in `SKILL.md` and change the copy in the same commit.
 - Claims about harness behaviour carry a primary-source URL or an `[UNVERIFIED]` marker, and each reference opens with the docs date and product version it was checked against.
 - `research/` is dated source material, not guidance; see [`research/README.md`](research/README.md). Corrections belong in `references/`; the research files stay as they were recorded.
