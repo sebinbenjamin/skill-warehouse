@@ -12,14 +12,14 @@ Ranked strongest → weakest. Controls low on this list are routinely mistaken f
 | **T2** | Egress allowlist (default-deny firewall, proxy, no route) | `curl` to attacker hosts; most naive exfil | DNS exfil; smuggling to an *allowed* domain (gist, PR, public repo); MCP servers and setup steps that run outside the enforcement point |
 | **T3** | Credential scrub (env unset/mask, launch shell without secrets, short-lived tokens) | `env`/`printenv` dumping tokens into the transcript; tokens leaving with an escaped request (mask) | Secrets in files the agent may read; ambient auth stored in files (`~/.aws/credentials`, `gh` hosts) unless also denied |
 | **T4** | Harness deny/ask rule on paths, tools, commands | The harness's own Read/Edit/Bash/WebFetch calls that match; removing a tool from the model's context entirely | Arbitrary subprocesses (`python -c "open('.env')"`); argument injection and interpreter/wrapper evasion (`npx`, `docker exec`, `devbox run`); encoding (`base64 -d \| sh`); MCP tools |
-| **T5** | Hook / pre-tool gate (deterministic program inspecting each call) | Whatever it can express in code on its trigger surface — including content-based egress DLP | Anything outside its trigger surface; a session that rewrites hook config; the hook's own bugs; fail-open on error/timeout |
-| **T6** | Ignore file (`.gitignore`, `.cursorignore`, `.geminiignore`, `.aiderignore`, `.clineignore`, `.rooignore`, `.kiroignore`) | Accidental indexing, @-mention inclusion, search noise | `cat`, any subprocess, any MCP server — vendors say so verbatim (Cursor: terminal and MCP "cannot block access"; Cline: "not a security or access-control boundary") |
+| **T5** | Hook / pre-tool gate (deterministic program inspecting each call) | Whatever it can express in code on its trigger surface, including content-based egress DLP | Anything outside its trigger surface; a session that rewrites hook config; the hook's own bugs; fail-open on error/timeout |
+| **T6** | Ignore file (`.gitignore`, `.cursorignore`, `.geminiignore`, `.aiderignore`, `.clineignore`, `.rooignore`, `.kiroignore`) | Accidental indexing, @-mention inclusion, search noise | `cat`, any subprocess, any MCP server; vendors say so verbatim (Cursor: terminal and MCP "cannot block access"; Cline: "not a security or access-control boundary") |
 | **T7** | Instruction file (`AGENTS.md`, `CLAUDE.md`, rules, "block instructions" for a classifier) | Well-intentioned model error, somewhat | Anything adversarial; competes with injected instructions; dropped under context pressure. Never the answer to "what stops this?" for a Critical finding |
 
 Two harms need separate controls:
 
-- **Disclosure** — private data enters the transcript and reaches the provider. Governed by *read scope* (T3, T4 path rules, T1 `denyRead`). A sandbox alone does nothing here.
-- **Exfiltration** — data reaches a third party the agent contacted, usually via prompt injection. Governed by T1 network isolation, T2, and ask-gates.
+- **Disclosure**: private data enters the transcript and reaches the provider. Governed by *read scope* (T3, T4 path rules, T1 `denyRead`). A sandbox alone does nothing here.
+- **Exfiltration**: data reaches a third party the agent contacted, usually via prompt injection. Governed by T1 network isolation, T2, and ask-gates.
 
 An agent with read access to private files, exposure to untrusted content (repo files, issues, web pages, dependency READMEs, MCP tool descriptions), and any outbound channel holds the full *lethal trifecta*. Read-only access is not a safe posture while the shell is an exit.
 
@@ -32,7 +32,7 @@ Which tiers each harness can reach at all, and whether a repo file can carry the
 | Repo-committable policy | ✅ `.claude/settings.json` (some keys user/managed-only) | ⚠️ user config; profiles not repo-scoped | ✅ `opencode.json` | ❌ workspace policies inert; `.gemini/settings.json` partial | ✅ `.cursor/cli.json`, `permissions.json`, `sandbox.json` | ✅ `.github/copilot/settings.json` | ⚠️ `.aider.conf.yml` (no perms) | ❌ | ❌ | ❌ | ❌ |
 | Deny reads of secret paths (T4) | ✅ `Read(...)` | ✅ permission profile only; `sandbox_mode` grants all reads | ✅ `permission.read` (read tool only) | ✅ policy `deny` (user/admin tier) | ✅ `Read(...)` in `cli.json` | ⚠️ `--deny-tool` / saved approvals | ❌ | ❌ | ⚠️ `.rooignore` | ✅ `reject` | ✅ `fs_read` deny |
 | Deny precedence | ✅ deny first | ✅ | ❌ **last match wins** | ✅ priority | ✅ (CLI) | ✅ | n/a | n/a | n/a | ✅ | ✅ |
-| OS sandbox (T1) | ✅ macOS/Linux/WSL2 — **not native Windows** | ✅ Seatbelt/bwrap; Windows Sandbox | ❌ | ✅ seatbelt/docker | ✅ but `~/.ssh` readable | ✅ MXC | ❌ | ❌ | ❌ | ✅ e2b | ⚠️ |
+| OS sandbox (T1) | ✅ macOS/Linux/WSL2, **not native Windows** | ✅ Seatbelt/bwrap; Windows Sandbox | ❌ | ✅ seatbelt/docker | ✅ but `~/.ssh` readable | ✅ MXC | ❌ | ❌ | ❌ | ✅ e2b | ⚠️ |
 | Egress allowlist (T2) | ✅ `sandbox.network` | ✅ `network_proxy` | ⚠️ `webfetch` perm only | ✅ `sandboxNetworkAccess` | ✅ `networkPolicy` + SSRF blocks | ✅ `allowedUrls`/`deniedUrls` | ❌ | ❌ | ❌ | ❓ | ⚠️ |
 | Credential scrub (T3) | ✅ `sandbox.credentials`, env scrub | ✅ `shell_environment_policy` (off by default) | ❌ | ✅ redaction (off by default) | ⚠️ cloud only | ❓ | ❌ | ❌ | ❌ | ✅ redaction | ❌ |
 | Hooks (T5) | ✅ | ✅ | ⚠️ plugins | ✅ | ❌ | ✅ reads `.claude` hooks | ❌ | ❌ | ❌ | ⚠️ delegate | ✅ |
@@ -49,7 +49,7 @@ Which tiers each harness can reach at all, and whether a repo file can carry the
 | `git push`, `git remote add/set-url`, `git config` touching remotes/hooks/`insteadOf`/`core.fsmonitor` | Exfil by push; persistence; arbitrary execution |
 | Public-artifact creation: `gh repo create`, `gh gist create`, `gh pr create`, `gh issue create`, `gh api` | The s1ngularity and GitHub-MCP exfil route |
 | Package publish: `npm/yarn/pnpm publish`, `twine upload`, `cargo publish`, `gem push`, `docker push`, `nuget push`, `helm push` | Exfil + downstream poisoning |
-| Credential reads: `~/.ssh ~/.aws ~/.config/gcloud ~/.azure ~/.kube ~/.docker ~/.gnupg ~/.netrc ~/.git-credentials`, browser profiles, `**/.env*` | Disclosure — usually deny; ask only if genuinely needed |
+| Credential reads: `~/.ssh ~/.aws ~/.config/gcloud ~/.azure ~/.kube ~/.docker ~/.gnupg ~/.netrc ~/.git-credentials`, browser profiles, `**/.env*` | Disclosure: usually deny; ask only if genuinely needed |
 | Env/identity enumeration: `env printenv set export -p declare -x`, `Get-ChildItem Env:`, `whoami hostname id groups`, `ifconfig ipconfig ip addr getmac netstat lsof -i`, `uname -a systeminfo`, `aws sts get-caller-identity`, `gcloud config list`, `az account show`, `gh auth status` | Disclosure + machine fingerprinting |
 | Privilege: `sudo doas su runas`, `Start-Process -Verb RunAs`, `--privileged` | Escapes the boundary |
 | Destructive: `rm -rf`, `git reset --hard`, `git clean -fdx`, `git push --force`, `Remove-Item -Recurse -Force`, `DROP/TRUNCATE`, `terraform apply/destroy`, `kubectl delete`, `aws s3 rm` | Blast radius |
@@ -59,7 +59,7 @@ Which tiers each harness can reach at all, and whether a repo file can carry the
 
 Approval fatigue is a failure mode: a gate that fires fifty times a session gets click-through-approved. Let T1/T2 absorb the routine and reserve `ask` for the consequential. Approval prompts can also lie: argument injection into an already-approved command bypasses the human (Trail of Bits, 2025-10), and MCP approval dialogs truncate tool descriptions.
 
-## Universal deny list — path globs
+## Universal deny list: path globs
 
 Translate into the harness's syntax (see the per-harness reference for anchoring rules; on Windows the Claude Code form is `//c/Users/*/...`, and a POSIX-only list is a silent no-op).
 
@@ -98,7 +98,7 @@ Translate into the harness's syntax (see the per-harness reference for anchoring
 //c/Users/*/AppData/Local/Google/Chrome/User Data/**  //c/Users/*/AppData/Local/Microsoft/Edge/User Data/**
 ```
 
-## Universal deny list — commands
+## Universal deny list: commands
 
 **Deny outright** (no legitimate use in a coding session): `sudo *`, `doas *`, `su *`, `runas *`, `chmod 777 *`, `chown -R *`, `mkfs*`, `dd if=* of=/dev/*`, `diskutil *`, `format *`, `curl * | sh`, `curl * | bash`, `wget * | sh`, `iwr * | iex`, `history`, `cat ~/.bash_history`, `cat ~/.ssh/*`, `cat ~/.aws/*`, `cat ~/.netrc`, `cat ~/.git-credentials`, `gpg --export-secret-keys *`, `security dump-keychain *`.
 
@@ -132,7 +132,7 @@ Reachable via `env`, `printenv`, `set`, `/proc/self/environ`, `/proc/<pid>/envir
 | Deny `**/.env*` | Editing `.env.example`; scaffolding a new `.env` | Re-allow the example file after verifying it is placeholder-only; or `ask` |
 | Deny `~/.aws/**`, `~/.config/gh/**` | `aws`, `gh`, `terraform` stop authenticating | Mask with host injection where supported; or run those commands outside the sandbox with explicit approval |
 | Deny/gate `curl`, `wget` | `curl localhost:3000`, install scripts | Allowlist `localhost`/`127.0.0.1` and known hosts; use the harness's fetch tool with a domain allowlist |
-| Gate `ping`/`dig`/`nslookup` | Network debugging | Accept the friction — this is the DNS channel |
+| Gate `ping`/`dig`/`nslookup` | Network debugging | Accept the friction: this is the DNS channel |
 | Gate `docker *` | Containerised workflows | Allow `docker ps`/`logs`; gate `run`/`exec`/`push`; never mount `docker.sock` into the sandbox |
 | Gate `git push *` | High prompt frequency | Restrict to the current branch rather than gating every push; keep force-push gated |
 | Deny `env`/`printenv` | Env debugging; build tools that shell out to `env` | Scrub the environment so `env` is harmless, rather than blocking `env` |

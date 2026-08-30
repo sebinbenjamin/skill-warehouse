@@ -1,6 +1,6 @@
 # Reach inventory commands
 
-Run from the repo root. Report **names and locations only** — never values — so the report is not itself a leak. Install what is missing (`brew install gitleaks trufflehog`, `winget install gitleaks`, `pip install detect-secrets`); if a scanner cannot be installed, say so and fall back to the `find`/`git` checks.
+Run from the repo root. Report **names and locations only** (never values) so the report is not itself a leak. Install what is missing (`brew install gitleaks trufflehog`, `winget install gitleaks`, `pip install detect-secrets`); if a scanner cannot be installed, say so and fall back to the `find`/`git` checks.
 
 ```bash
 # 1. Worktree scan INCLUDING untracked and ignored files — this is what the agent can read.
@@ -57,7 +57,7 @@ PowerShell equivalents where the Bash tool is unavailable: `Get-ChildItem Env: |
 
 Interpretation:
 
-- A finding in **history only** is still Critical — the agent can run `git log -p`.
+- A finding in **history only** is still Critical: the agent can run `git log -p`.
 - **Deletion is not remediation.** A verified live credential requires rotation or revocation.
-- Clean scans mean "no known-pattern secret found". They say nothing about personal data in fixtures, confidential source, or internal architecture — that is the `repo-disclosure` skill's question.
+- Clean scans mean "no known-pattern secret found". They say nothing about personal data in fixtures, confidential source, or internal architecture; that is the `repo-disclosure` skill's question.
 - A `.gitignore` entry proves nothing about reach; an ignored file is as readable as a tracked one.

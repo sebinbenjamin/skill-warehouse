@@ -34,10 +34,10 @@ Done when target, access mode, scope, and the separation of assessing agent from
 
 Classify each finding with the most restrictive class that applies: `RESTRICTED` > `CONFIDENTIAL` > `PRIVATE-OWNED` > `PUBLIC`.
 
-- **PUBLIC** — intentionally public: published open-source code, public documentation, synthetic examples, placeholder configuration. Compatible with a training-eligible provider on its own; local files, uncommitted changes, credentials, and connected tools can still make the working project unsafe.
-- **PRIVATE-OWNED** — non-public, wholly owned by the user, free of employer, client, collaborator, privacy, contractual, or licensing restriction (an unpublished personal project). Safe once the owner has authority to consent and accepts the provider's terms.
-- **CONFIDENTIAL** — non-public information whose disclosure would breach an employment, client, NDA, contractual, licensing, or security expectation: private company or client source; internal architecture, hostnames, infrastructure; non-public product plans, research, pricing, strategy; proprietary algorithms, business logic, datasets; security findings, incidents, operational procedures; internal tickets, meeting notes, support conversations; third-party licensed material not permitted for this use. Disclosable only with evidence that this provider/use is permitted. A file needs no `CONFIDENTIAL` label, and no credentials inside it, to be confidential.
-- **RESTRICTED** — exposure creates a direct security, privacy, regulatory, or account-access risk: passwords, API keys, tokens, session cookies, private keys, signing certificates, credential stores, production connection strings and configuration; cloud and package-registry credentials, Terraform state, Kubernetes configuration; real personal data (customer, candidate/student, employee, support, authentication, payment, regulated records) wherever it sits — dumps, exports, fixtures, logs, screenshots; live secrets present only in Git history. A confirmed restricted finding is **DO NOT USE** until it is outside the provider's reach. A possibly exposed credential gets a rotation or revocation recommendation; deletion alone leaves it live.
+- **PUBLIC**. Intentionally public: published open-source code, public documentation, synthetic examples, placeholder configuration. Compatible with a training-eligible provider on its own; local files, uncommitted changes, credentials, and connected tools can still make the working project unsafe.
+- **PRIVATE-OWNED**. Non-public, wholly owned by the user, free of employer, client, collaborator, privacy, contractual, or licensing restriction (an unpublished personal project). Safe once the owner has authority to consent and accepts the provider's terms.
+- **CONFIDENTIAL**. Non-public information whose disclosure would breach an employment, client, NDA, contractual, licensing, or security expectation: private company or client source; internal architecture, hostnames, infrastructure; non-public product plans, research, pricing, strategy; proprietary algorithms, business logic, datasets; security findings, incidents, operational procedures; internal tickets, meeting notes, support conversations; third-party licensed material not permitted for this use. Disclosable only with evidence that this provider/use is permitted. A file needs no `CONFIDENTIAL` label, and no credentials inside it, to be confidential.
+- **RESTRICTED**. Exposure creates a direct security, privacy, regulatory, or account-access risk: passwords, API keys, tokens, session cookies, private keys, signing certificates, credential stores, production connection strings and configuration; cloud and package-registry credentials, Terraform state, Kubernetes configuration; real personal data (customer, candidate/student, employee, support, authentication, payment, regulated records) wherever it sits (dumps, exports, fixtures, logs, screenshots); live secrets present only in Git history. A confirmed restricted finding is **DO NOT USE** until it is outside the provider's reach. A possibly exposed credential gets a rotation or revocation recommendation; deletion alone leaves it live.
 
 ## Verdicts
 
@@ -142,19 +142,19 @@ Done when the overall, static, and agentic verdicts are consistent with the find
 <the decisive reasons, one short paragraph>
 
 ## Blocking findings
-<per blocker: severity, data class, location, type of information, why it matters, required action — or `None found`>
+<per blocker: severity, data class, location, type of information, why it matters, required action, or `None found`>
 
 ## Confidentiality findings
 <per area: data class, path or project area, why it may be sensitive, whether the assessed provider/use may receive it>
 
 ## Unknowns
-<unresolved ownership, policy, licensing, provider-term, or scope questions that affect the verdict — or `None`>
+<unresolved ownership, policy, licensing, provider-term, or scope questions that affect the verdict, or `None`>
 
 ## Safe scope
-<parts of the project usable with the assessed provider — or `Entire assessed scope`>
+<parts of the project usable with the assessed provider, or `Entire assessed scope`>
 
 ## Excluded scope
-<each item that must stay out of reach, with the boundary enforcing it — or `None`>
+<each item that must stay out of reach, with the boundary enforcing it, or `None`>
 
 ## Recommendation
 <one direct operational recommendation>

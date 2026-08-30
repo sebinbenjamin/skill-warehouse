@@ -8,10 +8,10 @@ Every finding records: check id · location · severity · the control (tier) pr
 
 | # | Check | Severity |
 |---|---|---|
-| A1 | Secret-shaped files in the worktree (`.env*`, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `*.tfstate`, `.npmrc`, `serviceAccount*.json`, `*.har`) — tracked, untracked, or ignored | Critical |
+| A1 | Secret-shaped files in the worktree (`.env*`, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `*.tfstate`, `.npmrc`, `serviceAccount*.json`, `*.har`), tracked, untracked, or ignored | Critical |
 | A2 | `gitleaks dir` finds secrets in the worktree | Critical |
-| A3 | `gitleaks git` / TruffleHog finds secrets in history only | Critical — `git log -p` is in reach |
-| A4 | TruffleHog reports **verified** (live) credentials | Critical — rotate, deletion is not remediation |
+| A3 | `gitleaks git` / TruffleHog finds secrets in history only | Critical: `git log -p` is in reach |
+| A4 | TruffleHog reports **verified** (live) credentials | Critical: rotate, deletion is not remediation |
 | A5 | `.git/config` or `git remote -v` embeds a token | Critical |
 | A6 | Notebook outputs, `*.har`, screenshots, `fixtures/` + `*.sql`/`*.csv` dumps present | High (Critical if real personal data) |
 | A7 | Symlinks resolving outside the repo | High |
@@ -24,7 +24,7 @@ Every finding records: check id · location · severity · the control (tier) pr
 |---|---|---|
 | B1 | Secret-looking env vars exported in the launching shell (name-pattern match; values never reported) | High |
 | B2 | Credential dirs present and readable (`~/.ssh`, `~/.aws`, `~/.config/gcloud`, `~/.azure`, `~/.kube`, `~/.docker`, `~/.gnupg`, `~/.netrc`, `~/.git-credentials`, Windows `AppData` equivalents) | High (Critical if no T1/T4 deny covers them) |
-| B3 | `SSH_AUTH_SOCK` set — agent forwarding reachable | High |
+| B3 | `SSH_AUTH_SOCK` set: agent forwarding reachable | High |
 | B4 | Cloud instance / CI runner where `169.254.169.254` is reachable | Critical |
 | B5 | `/var/run/docker.sock` reachable from the agent's boundary | Critical |
 | B6 | `~/.kube/config` points at a non-local cluster | High |
@@ -37,8 +37,8 @@ Every finding records: check id · location · severity · the control (tier) pr
 
 | # | Check | Severity |
 |---|---|---|
-| C1 | No harness config present at all — running on defaults | High (Critical for harnesses whose default is allow-all, e.g. OpenCode) |
-| C2 | **Auto/YOLO mode** reachable outside a container/VM: `--dangerously-skip-permissions`, `--yolo`, `--full-auto`, `--dangerously-bypass-approvals-and-sandbox`, `--trust-all-tools`, `--allow-all`, `--yes-always`, `--auto`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`, Cursor "Run Everything", `defaultMode: bypassPermissions` — in config, scripts, aliases, Makefiles, or CI | Critical |
+| C1 | No harness config present at all, running on defaults | High (Critical for harnesses whose default is allow-all, e.g. OpenCode) |
+| C2 | **Auto/YOLO mode** reachable outside a container/VM: `--dangerously-skip-permissions`, `--yolo`, `--full-auto`, `--dangerously-bypass-approvals-and-sandbox`, `--trust-all-tools`, `--allow-all`, `--yes-always`, `--auto`, `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`, Cursor "Run Everything", `defaultMode: bypassPermissions` (in config, scripts, aliases, Makefiles, or CI) | Critical |
 | C3 | No OS sandbox: not enabled, unsupported on this host (Claude Code on native Windows), fails open, or a permissive profile (Gemini `permissive-open`) | High |
 | C4 | Sandbox enabled but filesystem layer disabled or `allowRead` re-opens `~` | High |
 | C5 | Network unrestricted: no domain allowlist, no egress firewall, `*-open` profile, `networkPolicy.default: allow` | High |
@@ -50,13 +50,13 @@ Every finding records: check id · location · severity · the control (tier) pr
 | C11 | Denylist-style command rules where an allowlist is available | Medium |
 | C12 | Unix sockets allowed through the sandbox (`docker.sock`) | Critical |
 | C13 | Weakening flags: `enableWeakerNestedSandbox`, `allowAppleEvents`, `allowAllUnixSockets`, `enableWeakerNetworkIsolation`, `ignoreViolations`, `sandbox.excludedCommands` non-empty, `insecure_none` | High |
-| C14 | Repo-scope config **widens** authority: allow rules, `additionalDirectories`, `trust: true` on MCP servers, repo-registered hooks, agent files with wider permissions, `enableAllProjectMcpServers: true` | High (Critical for repo-registered hooks — arbitrary code at session start) |
+| C14 | Repo-scope config **widens** authority: allow rules, `additionalDirectories`, `trust: true` on MCP servers, repo-registered hooks, agent files with wider permissions, `enableAllProjectMcpServers: true` | High (Critical for repo-registered hooks: arbitrary code at session start) |
 | C15 | No managed/org-level settings pinning the policy (team context only) | Medium |
-| C16 | No hooks configured for pre-tool gating | Low — missed opportunity |
+| C16 | No hooks configured for pre-tool gating | Low: missed opportunity |
 | C17 | An ignore file (T6) is the *only* protection for a sensitive path | High |
 | C18 | An instruction file (T7) is the *only* protection for a sensitive path | High |
-| C19 | Headless/non-interactive mode (`-p`, SDK, CI) on an unreviewed repo — trust dialogs never fire | Medium |
-| C20 | **Inert** config. Known instances: rules honoured only from user/managed scope placed in a repo file; Gemini workspace-tier policies; a Codex permission profile alongside any `sandbox_mode` (the profile is silently overridden); Codex `sandbox_mode = "read-only"` relied on for read protection (it grants filesystem-wide read); `Write(...)`/`Glob(...)` path rules; mis-anchored `/path` in user settings; hooks with missing scripts or `exit 1`; POSIX-only paths on Windows | High — false sense of security |
+| C19 | Headless/non-interactive mode (`-p`, SDK, CI) on an unreviewed repo: trust dialogs never fire | Medium |
+| C20 | **Inert** config. Known instances: rules honoured only from user/managed scope placed in a repo file; Gemini workspace-tier policies; a Codex permission profile alongside any `sandbox_mode` (the profile is silently overridden); Codex `sandbox_mode = "read-only"` relied on for read protection (it grants filesystem-wide read); `Write(...)`/`Glob(...)` path rules; mis-anchored `/path` in user settings; hooks with missing scripts or `exit 1`; POSIX-only paths on Windows | High: false sense of security |
 | C21 | Personal override file tracked in git (`.claude/settings.local.json`, `.github/copilot/settings.local.json`) | High |
 
 ## D. Connected tools
@@ -75,7 +75,7 @@ Every finding records: check id · location · severity · the control (tier) pr
 
 | # | Check | Severity |
 |---|---|---|
-| E1 | Session will read third-party content: issues, PRs, web pages, dependency source | High — trifecta leg |
+| E1 | Session will read third-party content: issues, PRs, web pages, dependency source | High: trifecta leg |
 | E2 | Repo carries agent-instruction files from untrusted contributors (`AGENTS.md`, `.cursor/rules`, `.github/copilot-instructions.md`, skills) | High |
 | E3 | Hidden-instruction markers in repo content: invisible Unicode tags, zero-width characters, HTML comments with imperative text, base64 blobs in docs | High |
 | E4 | Untrusted/forked/unreviewed repo without VM isolation | Critical |
@@ -84,7 +84,7 @@ Every finding records: check id · location · severity · the control (tier) pr
 
 | # | Check | Severity |
 |---|---|---|
-| F1 | Provider tier retains or trains on transcripts, or terms unknown (assume yes) — drives escalation of everything above | High |
+| F1 | Provider tier retains or trains on transcripts, or terms unknown (assume yes): drives escalation of everything above | High |
 | F2 | Prior session transcripts on disk readable by the current session (`~/.claude/projects/**`, `~/.codex/sessions/**` not denied) | High |
 | F3 | Telemetry/OTel exporters shipping prompt or tool metadata off-box; session sharing enabled (`share: auto`) | Medium |
 | F4 | Memory files writable by the session (injection persistence) | High |

@@ -11,9 +11,9 @@ metadata:
 
 # Agent permissions
 
-Decide whether the harness setup in this repo and on this machine is safe to run, and produce the configuration that makes it so. This is a **hardening** decision, not a disclosure decision — `repo-disclosure` decides *whether* the project may reach the provider; this skill decides *how narrowly the agent is confined* once it does. The question is:
+Decide whether the harness setup in this repo and on this machine is safe to run, and produce the configuration that makes it so. This is a **hardening** decision, not a disclosure decision: `repo-disclosure` decides *whether* the project may reach the provider; this skill decides *how narrowly the agent is confined* once it does. The question is:
 
-> If the model follows an injected instruction, or simply does the obvious thing, what can it read, run, or send that the owner would not want in a retained transcript or on an attacker's server — and what enforced control stops it?
+> If the model follows an injected instruction, or simply does the obvious thing, what can it read, run, or send that the owner would not want in a retained transcript or on an attacker's server, and what enforced control stops it?
 
 The report carries names, paths, and patterns; secret and personal values stay out of it.
 
@@ -21,17 +21,17 @@ The report carries names, paths, and patterns; secret and personal values stay o
 
 Read `references/controls.md` before assessing; its terms carry through every step.
 
-- **Reach** — everything the agent can read, run, or contact during the intended workflow: the worktree including ignored and untracked files, Git history, the home directory, the process environment, connected tools (MCP servers, ambient-auth CLIs), the network, and prior transcripts. Same definition as in `repo-disclosure`.
-- **Enforced** control — tiers T1–T5 (OS sandbox, egress allowlist, credential scrub, harness deny rule, hook): enforced outside the model. **Advisory** — T6–T7 (ignore files, instruction files): a prompt, not a boundary. A finding is *protected* only by an enforced control.
-- **Inert** — config that is present and looks protective but enforces nothing: a key placed in a scope that ignores it, a policy tier the harness has not implemented, a rule written against a tool name that is never consulted, a mis-anchored path, a hook whose script is missing or exits non-blocking, POSIX paths on a Windows host. Inert config is *unprotected*, and worse than absent config, because someone believes it works (check C20).
-- **Gate** — an `ask` rule or approval prompt that keeps a human in the loop for a consequential action. Prefer a gate to a deny wherever the action has legitimate uses.
-- **Disclosure** vs **exfiltration** — data reaching the provider through ordinary operation, versus data reaching a third party through an attack. Read scope governs the first; network isolation and gates govern the second. A sandbox alone does nothing for disclosure.
+- **Reach**: everything the agent can read, run, or contact during the intended workflow: the worktree including ignored and untracked files, Git history, the home directory, the process environment, connected tools (MCP servers, ambient-auth CLIs), the network, and prior transcripts. Same definition as in `repo-disclosure`.
+- **Enforced** control: tiers T1–T5 (OS sandbox, egress allowlist, credential scrub, harness deny rule, hook), enforced outside the model. **Advisory**: T6–T7 (ignore files, instruction files), a prompt, not a boundary. A finding is *protected* only by an enforced control.
+- **Inert**: config that is present and looks protective but enforces nothing: a key placed in a scope that ignores it, a policy tier the harness has not implemented, a rule written against a tool name that is never consulted, a mis-anchored path, a hook whose script is missing or exits non-blocking, POSIX paths on a Windows host. Inert config is *unprotected*, and worse than absent config, because someone believes it works (check C20).
+- **Gate**: an `ask` rule or approval prompt that keeps a human in the loop for a consequential action. Prefer a gate to a deny wherever the action has legitimate uses.
+- **Disclosure** vs **exfiltration**: data reaching the provider through ordinary operation, versus data reaching a third party through an attack. Read scope governs the first; network isolation and gates govern the second. A sandbox alone does nothing for disclosure.
 
 ## Assessment target
 
 Establish before scanning:
 
-- the harnesses in use — detect from the surfaces below, then confirm with the user which are actually run against this repo:
+- the harnesses in use: detect from the surfaces below, then confirm with the user which are actually run against this repo:
 
   | Harness | Detect from | Reference |
   | :-- | :-- | :-- |
@@ -43,8 +43,8 @@ Establish before scanning:
   | GitHub Copilot | `.github/copilot/`, `.github/copilot-instructions.md`, `~/.copilot/` | `references/copilot.md` |
   | Aider · Cline · Roo · Amp · Kiro | `.aider*`, `.clineignore`, `.rooignore`, `.kiro/`, `.kiroignore` | `references/other-harnesses.md` |
 
-- the host platform — some sandboxes do not exist on native Windows, where the whole sandbox block is inert
-- the session mode: interactive, headless (`-p`, SDK), or CI — headless modes skip trust dialogs
+- the host platform: some sandboxes do not exist on native Windows, where the whole sandbox block is inert
+- the session mode: interactive, headless (`-p`, SDK), or CI (headless modes skip trust dialogs)
 - the provider tier and whether it retains or trains (unknown → assume yes; this escalates every severity by one level per `references/checklist.md`)
 - who can change what: a solo developer edits user settings; a team may have managed/org settings that a repo file cannot override
 
@@ -60,7 +60,7 @@ Done when every command in the reference has run or been explicitly skipped with
 
 ### 2. Read each harness configuration
 
-For each harness in scope, load its reference from the table above and walk its detection checklist against every config surface it lists — repo files, user files, managed/system files, and vendor-side settings that can only be verified out of band.
+For each harness in scope, load its reference from the table above and walk its detection checklist against every config surface it lists: repo files, user files, managed/system files, and vendor-side settings that can only be verified out of band.
 
 Cross-harness surfaces count for every harness that reads them: `AGENTS.md` is shared; Copilot CLI reads `.claude/settings.json` hooks; a repo's hooks, `env` blocks, and MCP definitions execute under any harness that loads that file.
 
@@ -76,20 +76,20 @@ Done when every finding carries severity, current tier, and closing control.
 
 ### 4. Decide
 
-Apply the verdict rule in `references/checklist.md`. Give one verdict per harness and one overall — the most restrictive of them.
+Apply the verdict rule in `references/checklist.md`. Give one verdict per harness and one overall, the most restrictive of them.
 
 Done when the verdicts are consistent with the findings and no Critical is closed by an advisory control.
 
 ### 5. Propose the hardened configuration
 
-Produce, for each harness, the complete config files that close the findings — not fragments. Start from the harness reference's hardened baseline and fit it to this repo's real workflow (package registries it needs, hosts the build contacts, commands that run routinely), so the gates fire for the consequential and not for the routine. For each file state:
+Produce, for each harness, the complete config files that close the findings, not fragments. Start from the harness reference's hardened baseline and fit it to this repo's real workflow (package registries it needs, hosts the build contacts, commands that run routinely), so the gates fire for the consequential and not for the routine. For each file state:
 
-- the exact path and scope (repo-committed, user, managed) — a key in a scope that ignores it is inert, not a fix
+- the exact path and scope (repo-committed, user, managed); a key in a scope that ignores it is inert, not a fix
 - which findings it closes and at which tier
 - what it breaks, using the trade-off table in `references/controls.md`, and the mitigation
 - what remains open and why (no sandbox on this platform, vendor setting that must be changed in a UI, credential that must be rotated)
 
-Steps only a human can take — rotating a credential, enabling a vendor firewall or privacy mode, opting out of training, installing a sandbox dependency, moving to WSL2 or a container — go in a numbered manual list with the exact location of the switch.
+Steps only a human can take (rotating a credential, enabling a vendor firewall or privacy mode, opting out of training, installing a sandbox dependency, moving to WSL2 or a container) go in a numbered manual list with the exact location of the switch.
 
 Write the proposals to the report. Apply them to the working tree or home directory only when the user asks; editing a harness's own configuration is exactly the kind of change the gate list says a human approves.
 
@@ -112,13 +112,13 @@ Done when every open finding maps to a proposed file, a manual step, or an expli
 
 ## Findings
 | Check | Location | Severity | Protected by | Closes with |
-<one row per finding; `unprotected` where only an advisory control applies — or `None found`>
+<one row per finding; `unprotected` where only an advisory control applies, or `None found`>
 
 ## Inert configuration
-<config present but not enforced, with the reason — or `None`>
+<config present but not enforced, with the reason, or `None`>
 
 ## Not verifiable from here
-<vendor-side settings, provider terms, managed policies that need out-of-band confirmation — or `None`>
+<vendor-side settings, provider terms, managed policies that need out-of-band confirmation, or `None`>
 
 ## Proposed configuration
 ### <path> (<scope>)
@@ -126,7 +126,7 @@ Done when every open finding maps to a proposed file, a manual step, or an expli
 Closes: <check ids and tiers>. Breaks: <trade-off and mitigation>.
 
 ## Manual steps
-<numbered; each with the exact switch, rotation, or install — or `None`>
+<numbered; each with the exact switch, rotation, or install, or `None`>
 
 ## Residual risk
 <what stays open after everything above is applied, and why>

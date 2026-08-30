@@ -1,4 +1,4 @@
-# OpenCode — hardening reference
+# OpenCode: hardening reference
 Verified against: docs + `main` source as of 2026-08-30. Latest release `v1.18.25` (2026-08-28). Canonical repo is `anomalyco/opencode`; `sst/opencode` redirects to it.
 
 ## Config surfaces
@@ -10,16 +10,16 @@ Layers **merge** (they do not replace), lowest → highest precedence.
 | `.well-known/opencode` | remote | no | Layer 1, lowest. |
 | `~/.config/opencode/opencode.json` | user | no | Layer 2. Only place to put machine-wide posture. |
 | `$OPENCODE_CONFIG` (path to file) | env | no | Layer 3. |
-| `opencode.json` / `opencode.jsonc` (project root) | repo | **yes** | Layer 4 — **overrides the user layer**. A repo file can loosen a developer's personal hardening. JSON and JSONC both accepted; schema `https://opencode.ai/config.json`. |
+| `opencode.json` / `opencode.jsonc` (project root) | repo | **yes** | Layer 4: **overrides the user layer**. A repo file can loosen a developer's personal hardening. JSON and JSONC both accepted; schema `https://opencode.ai/config.json`. |
 | `.opencode/` (agents, plans, commands) | repo | yes | Layer 5. |
-| `.opencode/agents/*.md` | repo | yes | Markdown + frontmatter; filename = agent id; frontmatter carries `mode` (`primary`/`subagent`/`all`), `permission`, `model`, `tools`. **Agent rules take precedence over the global `permission` block** — these files can widen. |
+| `.opencode/agents/*.md` | repo | yes | Markdown + frontmatter; filename = agent id; frontmatter carries `mode` (`primary`/`subagent`/`all`), `permission`, `model`, `tools`. **Agent rules take precedence over the global `permission` block**; these files can widen. |
 | `$OPENCODE_CONFIG_CONTENT` (inline JSON) | env | no | Layer 6. |
 | Managed config files (system dirs) | machine | no | Layer 7. |
 | macOS managed preferences (MDM) | machine | no | Layer 8, highest. |
 | `AGENTS.md` | repo | yes | Instruction text only, no enforcement. |
 | `~/.config/opencode/AGENTS.md` | user | no | Instruction text only. |
 
-Because layers merge, a project config **cannot remove** a permissive global rule — it can only add a rule that wins by being later or more specific.
+Because layers merge, a project config **cannot remove** a permissive global rule; it can only add a rule that wins by being later or more specific.
 
 Top-level Config keys (from the published schema): `agent, attachment, autoshare, autoupdate, command, compaction, default_agent, disabled_providers, enabled_providers, enterprise, experimental, formatter, instructions, layout, logLevel, lsp, mcp, mode, model, permission, plugin, provider, reference, references, server, share, shell, skills, small_model, snapshot, subagent_depth, tool_output, tools, username, watcher`.
 
@@ -29,17 +29,17 @@ Top-level Config keys (from the published schema): `agent, attachment, autoshare
 |---|---|---|---|
 | `permission.read` deny patterns | T4 harness deny rule | The `read` tool opening matched paths | `bash` (`cat`, `python -c`), MCP servers reading the filesystem, content already in context |
 | `permission.bash` per-command deny patterns | T4 harness deny rule | Literal/glob-matched command strings | Trivial obfuscation (`c""at .env`, `python -c "print(open('.env').read())"`, base64, a wrapper script) |
-| `permission.bash: "ask"` or `"deny"` (whole tool) | T4 harness deny rule | All shell execution without a prompt — the only reliable shell posture | Nothing at this layer; still relies on the human answering the prompt |
+| `permission.bash: "ask"` or `"deny"` (whole tool) | T4 harness deny rule | All shell execution without a prompt: the only reliable shell posture | Nothing at this layer; still relies on the human answering the prompt |
 | `permission.external_directory: {"*": "deny"}` | T4 harness deny rule | Tool access to paths outside the project root | `bash` subprocesses that chdir if `bash` itself is allowed |
 | `permission.webfetch` / `websearch` | T4 harness deny rule | The built-in fetch/search tools | Egress via `bash` (`curl`, `wget`), MCP servers, provider API calls |
-| `tools: { "<name>": false }` | T4 harness deny rule | Removes the tool from the model entirely — strongest available primitive | Other tools that reach the same capability |
+| `tools: { "<name>": false }` | T4 harness deny rule | Removes the tool from the model entirely: strongest available primitive | Other tools that reach the same capability |
 | `permission["*"]` default | T4 harness deny rule | Unlisted/unknown tools, including MCP tools by `additionalProperties` | Anything a later, more specific `allow` rule re-permits |
-| `.gitignore` (honoured by ripgrep) | T6 ignore file | Matched paths appearing in `grep` / `glob` **results** | `read` and `bash` — this is search filtering, not access control |
+| `.gitignore` (honoured by ripgrep) | T6 ignore file | Matched paths appearing in `grep` / `glob` **results** | `read` and `bash`: this is search filtering, not access control |
 | `watcher.ignore` | T6 ignore file | Directories being file-**monitored** | Any tool access |
-| `opencode-ignore` plugin (third-party) | T6 ignore file | gitignore-style access blocking, per the plugin's README | Nothing guaranteed — community code, not vendor-supported |
+| `opencode-ignore` plugin (third-party) | T6 ignore file | gitignore-style access blocking, per the plugin's README | Nothing guaranteed: community code, not vendor-supported |
 | `AGENTS.md` / instruction files | T7 instruction file | Nothing; steering only | Any tool call |
-| `share: "disabled"` | — (data routing) | Session transcripts syncing to vendor servers and publishing at `opncd.ai/s/<id>` | Provider-side retention |
-| `disabled_providers` / `enabled_providers` | — (data routing) | Model traffic going to unapproved providers | Anything else |
+| `share: "disabled"` | - (data routing) | Session transcripts syncing to vendor servers and publishing at `opncd.ai/s/<id>` | Provider-side retention |
+| `disabled_providers` / `enabled_providers` | - (data routing) | Model traffic going to unapproved providers | Anything else |
 
 **Absent tiers.** OpenCode has **no T1 OS sandbox**, **no T2 egress allowlist**, and **no T3 credential scrub** (contrast Gemini CLI's `security.environmentVariableRedaction`). There is no first-party ignore file. A `plugin` key exists in the schema; treat any repo-committed plugin as arbitrary code execution. **[UNVERIFIED: plugin/hook execution semantics were not confirmed against primary docs.]**
 
@@ -59,7 +59,7 @@ Top-level Config keys (from the published schema): `agent, attachment, autoshare
      read: { "*": "allow", "*.env": "ask", "*.env.*": "ask", "*.env.example": "allow" },
    })
    ```
-3. **The docs claim ".env files denied by default"; the source says `ask`.** And the guard is on the **`read` tool only** — `bash` defaults to `allow`, so `cat .env` is unprompted on a fresh install.
+3. **The docs claim ".env files denied by default"; the source says `ask`.** And the guard is on the **`read` tool only**; `bash` defaults to `allow`, so `cat .env` is unprompted on a fresh install.
 4. **Absence of a `permission` block is a hard fail, not a neutral.** No block = `"*": "allow"`.
 5. Values are exactly `"ask" | "allow" | "deny"`. `permission` may also be a bare string (`"permission": "ask"`), which applies to everything.
 6. Permission keys: `read`, `edit` (covers edit/write/patch), `glob`, `grep`, `bash`, `task`, `skill`, `lsp`, `question`, `webfetch`, `websearch`, `external_directory`, `doom_loop`; the schema also carries `list` and `todowrite`.
@@ -101,11 +101,11 @@ Top-level Config keys (from the published schema): `agent, attachment, autoshare
 | `~/.config/opencode/opencode.json` sets a permissive `permission` that the repo cannot remove (merge only adds) | High | user config |
 | `~/.config/opencode/agents/*.md` widening agent permissions | High | user agents dir |
 | Zen gateway in use with a training-eligible free/trial model (e.g. Big Pickle, NVIDIA Nemotron free, "Muse Spark Contributor Free") | High | Zen account settings / `provider` config |
-| `experimental.openTelemetry` and any residual outbound telemetry | Info | user config; community reports allege connections persist after disabling and that session titles may be computed remotely — **[UNVERIFIED: issue reports, not vendor confirmation. Egress-test before trusting.]** |
+| `experimental.openTelemetry` and any residual outbound telemetry | Info | user config; community reports allege connections persist after disabling and that session titles may be computed remotely. **[UNVERIFIED: issue reports, not vendor confirmation. Egress-test before trusting.]** |
 
 ## Hardened baseline
 
-**Repo-committable — `opencode.json` at project root** (complete and exact):
+**Repo-committable: `opencode.json` at project root** (complete and exact):
 
 ```jsonc
 {
@@ -151,7 +151,7 @@ Top-level Config keys (from the published schema): `agent, attachment, autoshare
 }
 ```
 
-Optional additions to the same file — per-agent tightening and outright tool removal:
+Optional additions to the same file (per-agent tightening and outright tool removal):
 
 ```json
 {
@@ -164,9 +164,9 @@ Optional additions to the same file — per-agent tightening and outright tool r
 }
 ```
 
-**Nothing in this file is ignored from repo scope** — OpenCode's project layer is fully honoured (layer 4). The reverse is the risk: everything here is also writable by a hostile repo. Keys with no repo-scope equivalent at all: there is no ignore file, no sandbox key, and no egress allowlist to set.
+**Nothing in this file is ignored from repo scope**: OpenCode's project layer is fully honoured (layer 4). The reverse is the risk: everything here is also writable by a hostile repo. Keys with no repo-scope equivalent at all: there is no ignore file, no sandbox key, and no egress allowlist to set.
 
-**User-level — `~/.config/opencode/opencode.json`** should carry the same `permission` block so that repos without one still land on a closed posture, plus provider pinning:
+**User-level (`~/.config/opencode/opencode.json`)** should carry the same `permission` block so that repos without one still land on a closed posture, plus provider pinning:
 
 ```json
 {
@@ -177,7 +177,7 @@ Optional additions to the same file — per-agent tightening and outright tool r
 }
 ```
 
-Note the merge asymmetry: because a project file sits *above* the user file, this user-level block is a floor for unconfigured repos only — a repo config can still add rules that win.
+Note the merge asymmetry: because a project file sits *above* the user file, this user-level block is a floor for unconfigured repos only; a repo config can still add rules that win.
 
 ## Verify at runtime
 

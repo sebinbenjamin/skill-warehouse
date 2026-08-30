@@ -1,2 +1,34 @@
+# Personal harness overrides. The shared config is committed; the local layer is not,
+# and both skills flag a tracked `settings.local.json` as a finding.
+.claude/settings.local.json
+.claude/projects/
+.claude/history.jsonl
+.codex/sessions/
+.cursor/cli-config.json
+.github/copilot/settings.local.json
 
+# Output from running these skills. Assessment reports and scanner findings name real
+# paths, hostnames, and check ids, so they stay local by default.
+/assessments/
+*.assessment.md
+gitleaks-report.*
+trufflehog-report.*
+.secrets.baseline
+
+# Secrets, in case one is ever created here while testing a scan.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Git Bash on Windows
 bash.exe.stackdump
